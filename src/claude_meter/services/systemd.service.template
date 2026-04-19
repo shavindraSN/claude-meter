@@ -1,0 +1,13 @@
+[Unit]
+Description=Claude Meter — push Claude Code usage to a tiny display
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=__EXECUTABLE__ run
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

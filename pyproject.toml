@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claude-meter"
+version = "0.1.0"
+description = "At-a-glance Claude Code usage on a tiny screen. Pulls live 5-hour and weekly percentages from Anthropic's OAuth API and pushes them to a GeeKmagic SmallTV clock over Wi-Fi."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "shavindra" }]
+keywords = ["claude", "anthropic", "usage", "dashboard", "geekmagic", "smalltv"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Monitoring",
+]
+dependencies = [
+    "pillow>=10.0.0",
+    "requests>=2.31.0",
+]
+
+[project.scripts]
+claude-meter = "claude_meter.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/shavindraSN/claude-meter"
+Issues   = "https://github.com/shavindraSN/claude-meter/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+claude_meter = ["services/*.template"]
