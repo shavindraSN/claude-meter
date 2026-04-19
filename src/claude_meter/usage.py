@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime
+import email.utils
 import json
 import urllib.error
 import urllib.request
@@ -12,26 +13,57 @@ USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
 BETA      = "oauth-2025-04-20"
 
 
-def fetch_usage() -> dict:
-    """GET /api/oauth/usage. Retries once on 401 after forcing a refresh."""
-    token, _org = get_access_token()
+class RateLimited(Exception):
+    """Raised on HTTP 429. Carries a retry_after hint in seconds."""
+    def __init__(self, retry_after: int):
+        super().__init__(f"rate limited, retry after {retry_after}s")
+        self.retry_after = retry_after
+
+
+def _parse_retry_after(value: str | None) -> int:
+    """Retry-After is seconds (int) or HTTP-date. Fall back to 60s."""
+    if not value:
+        return 60
+    try:
+        return max(1, int(value))
+    except ValueError:
+        pass
+    try:
+        dt = email.utils.parsedate_to_datetime(value)
+        delta = (dt - datetime.datetime.now(tz=dt.tzinfo)).total_seconds()
+        return max(1, int(delta))
+    except Exception:
+        return 60
+
+
+def _get(token: str) -> dict:
     req = urllib.request.Request(
         USAGE_URL,
         headers={"Authorization": f"Bearer {token}", "anthropic-beta": BETA},
     )
+    return json.loads(urllib.request.urlopen(req, timeout=10).read())
+
+
+def fetch_usage() -> dict:
+    """GET /api/oauth/usage. Retries once on 401 after forcing a refresh.
+
+    Raises RateLimited on 429 so the caller can honor Retry-After.
+    """
+    token, _org = get_access_token()
     try:
-        return json.loads(urllib.request.urlopen(req, timeout=10).read())
+        return _get(token)
     except urllib.error.HTTPError as e:
+        if e.code == 429:
+            raise RateLimited(_parse_retry_after(e.headers.get("Retry-After"))) from e
         if e.code not in (401, 403):
             raise
-        # Force a refresh by pretending the cached token was invalid.
-        # We do this by reading it fresh (auth layer will refresh if < 60s).
         token, _org = get_access_token()
-        req = urllib.request.Request(
-            USAGE_URL,
-            headers={"Authorization": f"Bearer {token}", "anthropic-beta": BETA},
-        )
-        return json.loads(urllib.request.urlopen(req, timeout=10).read())
+        try:
+            return _get(token)
+        except urllib.error.HTTPError as e2:
+            if e2.code == 429:
+                raise RateLimited(_parse_retry_after(e2.headers.get("Retry-After"))) from e2
+            raise
 
 
 def format_reset(resets_at_str: str) -> str:

@@ -8,7 +8,7 @@ import time
 
 from claude_meter import renderers, transports
 from claude_meter.config import Config
-from claude_meter.usage import extract, fetch_usage
+from claude_meter.usage import RateLimited, extract, fetch_usage
 
 
 def run(cfg: Config) -> None:
@@ -23,8 +23,10 @@ def run(cfg: Config) -> None:
     logged_once  = False
     last_key:   tuple | None = None
     last_push_ts = 0.0
+    fail_streak  = 0
 
     while True:
+        sleep_for = cfg.push_interval_sec
         try:
             data = fetch_usage()
             if not logged_once:
@@ -45,13 +47,21 @@ def run(cfg: Config) -> None:
                 last_push_ts = now
                 print(f"{_ts()} 5h {five_pct:.0f}%  7d {week_pct:.0f}%  "
                       f"pushed {n}B ({cfg.mode})", flush=True)
+            fail_streak = 0
         except KeyboardInterrupt:
             print("bye", flush=True)
             sys.exit(0)
+        except RateLimited as e:
+            sleep_for = max(e.retry_after, cfg.push_interval_sec)
+            print(f"{_ts()} [warn] 429 rate limited, sleeping {sleep_for}s",
+                  flush=True)
         except Exception as e:
-            print(f"[warn] {type(e).__name__}: {e}", flush=True)
+            fail_streak += 1
+            sleep_for = min(cfg.push_interval_sec * (2 ** (fail_streak - 1)), 600)
+            print(f"{_ts()} [warn] {type(e).__name__}: {e} "
+                  f"(retry in {sleep_for}s)", flush=True)
 
-        time.sleep(cfg.push_interval_sec)
+        time.sleep(sleep_for)
 
 
 def _ts() -> str:

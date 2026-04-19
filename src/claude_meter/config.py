@@ -19,7 +19,7 @@ class Config:
     device_host: str = ""
     mode:        str = "gif80"          # gif80 | photo240
     transport:   str = "geekmagic"
-    push_interval_sec: int = 30
+    push_interval_sec: int = 60
     force_push_sec:    int = 600
 
     @classmethod

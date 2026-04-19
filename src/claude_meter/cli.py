@@ -107,7 +107,7 @@ def build_parser() -> argparse.ArgumentParser:
     pc.add_argument("--mode",          choices=["gif80", "photo240"])
     pc.add_argument("--transport",     choices=["geekmagic"])
     pc.add_argument("--push-interval", type=int, dest="push_interval",
-                    help="seconds between pushes (default 30)")
+                    help="seconds between pushes (default 60)")
     pc.add_argument("--force-push",    type=int, dest="force_push",
                     help="seconds between re-pushes of unchanged values (default 600)")
     pc.set_defaults(func=_cmd_configure)
