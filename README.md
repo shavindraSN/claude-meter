@@ -36,7 +36,7 @@ pip install claude-meter
 ## Configure
 
 ```bash
-claude-meter configure --device-host 192.168.1.125 --mode gif80
+claude-meter configure --device-host 192.168.1.50 --mode gif80
 ```
 
 Modes:

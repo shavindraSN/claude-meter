@@ -12,6 +12,11 @@ from claude_meter.usage import extract, fetch_usage
 
 
 def run(cfg: Config) -> None:
+    if not cfg.device_host:
+        raise SystemExit(
+            "device_host is not set. Run `claude-meter configure "
+            "--device-host <ip>` first."
+        )
     renderer  = renderers.get(cfg.mode)
     transport = transports.get(cfg.transport, host=cfg.device_host, mode=cfg.mode)
 

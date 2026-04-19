@@ -16,7 +16,7 @@ from typing import Optional
 
 @dataclass
 class Config:
-    device_host: str = "192.168.1.125"
+    device_host: str = ""
     mode:        str = "gif80"          # gif80 | photo240
     transport:   str = "geekmagic"
     push_interval_sec: int = 30

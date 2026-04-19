@@ -103,7 +103,7 @@ def build_parser() -> argparse.ArgumentParser:
         func=_cmd_show)
 
     pc = sub.add_parser("configure", help="Update config values")
-    pc.add_argument("--device-host",   help="e.g. 192.168.1.125")
+    pc.add_argument("--device-host",   help="IP or hostname of the clock, e.g. 192.168.1.50")
     pc.add_argument("--mode",          choices=["gif80", "photo240"])
     pc.add_argument("--transport",     choices=["geekmagic"])
     pc.add_argument("--push-interval", type=int, dest="push_interval",

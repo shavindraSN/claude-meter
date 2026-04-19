@@ -27,7 +27,7 @@ GIF_FRAME_COUNT = 33
 class GeekmagicTransport:
     def __init__(self, host: str, mode: str):
         """
-        host: "192.168.1.125" or "http://192.168.1.125"
+        host: "192.168.1.50" or "http://192.168.1.50" (your clock's IP)
         mode: "gif80" -> writes gif.jpg with container wrap;
               "photo240" -> writes file1.jpg as-is
         """
