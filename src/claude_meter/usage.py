@@ -7,7 +7,7 @@ import json
 import urllib.error
 import urllib.request
 
-from claude_meter.auth import get_access_token
+from claude_meter.auth import get_access_token, invalidate_cached_token
 
 USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
 BETA      = "oauth-2025-04-20"
@@ -45,18 +45,29 @@ def _get(token: str) -> dict:
 
 
 def fetch_usage() -> dict:
-    """GET /api/oauth/usage. Retries once on 401 after forcing a refresh.
+    """GET /api/oauth/usage.
 
-    Raises RateLimited on 429 so the caller can honor Retry-After.
+    On 401/403: re-mint a token and retry once.
+    On 429: drop the cached token, mint a fresh one, retry once. If the
+    retry is still 429, surface RateLimited so the caller honors
+    Retry-After.
     """
     token, _org = get_access_token()
     try:
         return _get(token)
     except urllib.error.HTTPError as e:
         if e.code == 429:
-            raise RateLimited(_parse_retry_after(e.headers.get("Retry-After"))) from e
+            invalidate_cached_token()
+            try:
+                token, _org = get_access_token()
+                return _get(token)
+            except urllib.error.HTTPError as e2:
+                if e2.code == 429:
+                    raise RateLimited(_parse_retry_after(e2.headers.get("Retry-After"))) from e2
+                raise
         if e.code not in (401, 403):
             raise
+        invalidate_cached_token()
         token, _org = get_access_token()
         try:
             return _get(token)
